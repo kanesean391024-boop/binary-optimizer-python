@@ -1,4 +1,5 @@
-f.fc1(x))
+```
+lf.fc1(x))
         x = F.relu(sel"""ai_heuristics.py
 
 Lightweight scoring module combining:
@@ -38,7 +39,36 @@ def score_binary_chunk(chunk: list[int], model: TinyBinaryModel) -> float:
     return float(out.item())
 
 
-# ---------------- Simple Heuristic -------------------
+# ---------------- Simple Heuristic
+
+# ---------------- Training Harness (Step 4) -------------------
+class TinyBinaryTrainer:
+    """
+    Synthetic training harness for TinyBinaryModel.
+    Creates random 16‑bit samples and trains the model to predict a target
+    based on a simple rule: higher density of 1s → higher score.
+    """
+    def __init__(self, model: TinyBinaryModel, lr: float = 1e-3):
+        self.model = model
+        self.opt = torch.optim.Adam(model.parameters(), lr=lr)
+        self.loss_fn = nn.MSELoss()
+
+    def _make_batch(self, batch_size: int = 64):
+        xs = torch.randint(0, 2, (batch_size, 16)).float()
+        # target rule: proportion of 1s
+        ys = xs.mean(dim=1, keepdim=True)
+        return xs, ys
+
+    def train_steps(self, steps: int = 200):
+        for _ in range(steps):
+            x, y = self._make_batch()
+            pred = self.model(x)
+            loss = self.loss_fn(pred, y)
+            self.opt.zero_grad()
+            loss.backward()
+            self.opt.step()
+        return float(loss.item())
+ -------------------
 class SimpleAIHeuristic:
     def __init__(self, w_freq: float = 1.0, w_len: float = 0.5, w_savings: float = 1.0, nn_weight: float = 0.25):
         """
